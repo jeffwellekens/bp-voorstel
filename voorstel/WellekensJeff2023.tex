@@ -16,7 +16,7 @@
 \academicyear{2023-2024} % TODO: pas het academiejaar aan
 
 % TODO (fase 1): Werktitel
-\title{In welke scenario's is het Blazor Server-hostingmodel in .NET 8 beter geschikt dan het Blazor WebAssembly-hostingmodel voor het creëren van webapplicaties, en vice versa, met specifieke aandacht voor de nieuwe functies die zijn geïntroduceerd in .NET 8?}
+\title{Welke rendermode is het meest geschikt voor het ontwikkelen van webapplicaties met betrekking tot laadtijd, netwerkprestaties, zoekmachineoptimalisatie en schaalbaarheid in .NET 8?}
 
 % TODO (fase 1): Studentnaam en emailadres invullen
 \author{Jeff Wellekens}
@@ -51,11 +51,16 @@
 
 \begin{abstract}
   % performantie is te algemeen dit moet concreter worden beschreven (laadtijd, ...)
-  Deze paper onderzoekt welke blazor hostingmodellen het meest geschikt zijn in .NET 8 op basis
-  van performantie, zoekmachineoptimalisatie en schaalbaarheid voor het creëren van webapplicaties. Daarnaast wordt onderzocht
-  hoe nieuwe functionaliteiten in .NET 8 omtrent rendering kunnen helpen voor het optimaliseren van deze hostingmodellen.
+  Deze paper onderzoekt welke rendermode het meest geschikt is in .NET 8 op basis
+  van laadtijd, netwerkprestaties, zoekmachineoptimalisatie en schaalbaarheid voor het creëren van webapplicaties. 
   Het doel van dit onderzoek is om softwareontwikkelaars te voorzien van een duidelijk inzicht in de voordelen en nadelen van
-  elk blazor hostingmodel, zodat zij doordachte keuzes kunnen maken bij het selecteren van een hostingmodel.
+  elke rendermode, zodat zij doordachte keuzes kunnen maken bij het selecteren van een rendermode. Allereerst zal er een grondige literatuurstudie 
+  worden uitgevoerd om inzicht te verkrijgen in de verschillen tussen alle rendermodes. 
+  Vervolgens zal een experiment worden uitgevoerd waarin elke rendermode zal getest worden met een zelfgemaakte applicatie, gericht op laadtijd, netwerkprestaties, zoekmachineoptimalisatie en schaalbaarheid.
+  De resulterende gegevens zullen zorgvuldig worden geïnterpreteerd om te bepalen welke rendermode de beste keuze is op basis van de vooraf gedefinieerde criteria. 
+  Er wordt verwacht uit de hypothese dat de interactive server rendermode de beste resultaten zal vertonen op basis van van laadtijd, netwerkprestaties, zoekmachineoptimalisatie en schaalbaarheid. Desondanks
+  dat de interactive server rendermode de beste resultaten zal opleveren volgen de hypothese zal er ook blijken dat er gebruik kan gemaakt worden van de interactive webassembly rendermode voor aan
+  de schaalbaarheid criteria te voldoen op component niveau. 
 \end{abstract}
 
 \tableofcontents
@@ -75,39 +80,76 @@
 \label{sec:inleiding}
 
 % TODO: (fase 1) introduceer je gekozen onderwerp, formuleer de onderzoeksvraag en deelvragen. Wat is de doelstelling (is die S.M.A.R.T.?), wat zal het resultaat zijn van het onderzoek (een Proof-of-Concept, een prototype, een advies, ...)? Waarom is het nuttig om dit onderwerp te onderzoeken?
-
-\lipsum[1-3]
+Het algemeen onderwerp van deze paper is het vergelijken van alle rendermodes in het blazor web app template. Wanneer je als softwareontwikkelaar een 
+applicatie wilt maken in het blazor framework met de nieuwe web app template in .NET 8 zal je zien dat de rendering nu kan toegekend worden per component. Deze rendering per component 
+betreft de manier waarop blazor de HTML weergave zal renderen in de browser. Daarom wordt er in deze paper onderzocht welke
+rendermode de beste keuze is gebaseerd op laadtijd, netwerkprestaties, zoekmachineoptimalisatie en schaalbaarheid. De manier hoe dit zal verlopen is door middel van een experiment waarbij eenzelfde applicatie 
+zal gemaakt worden met alle rendermodes. Tenslotte wanneer de metingen gebeurd en onderzocht zijn zal er advies worden gegeven over welke rendermode het meest passend is afhankelijk van de relevante criteria.
 
 \section{Literatuurstudie}%
 \label{sec:literatuurstudie}
 
 % TODO: (fase 4) schrijf de literatuurstudie uit en gebruik waar gepast referenties naar de vakliteratuur.
-
+In deze literatuurstudie zullen we beginnen met het definiëren van fundamentele concepten die nodig zijn voor het begrijpen van de vakliteratuur. Vervolgens zullen we de verschillen
+tussen alle rendermodes toelichten. Allereerst gaan we het hebben over client en server render concepten. De term renderen betekent het maken van de 
+HTML opmaak die wordt weergegeven in de browser \autocite{Guardrex2023}.  Wat is client-side rendering (CSR)? Dit betekent dat de uiteindelijke HTML opmaak is 
+gegenereerd door de blazor webassembly runtime op de client. Geen enkele HTML is hierbij verzonden van de server naar de client. Er wordt hier van uitgegaan dat er 
+gebruiker interactiviteit is met de pagina. \autocite{Guardrex2023} Server-side rendering (SSR) wil zeggen dat de uiteindelijke HTML opmaak is gegenereerd door de ASP.NET Core runtime
+op de server. Deze HTML wordt van de server naar de client verzonden via het netwerk om vervolgens in de browser te worden weergegeven. Server-side rendering kan bestaan uit twee
+varianten. We hebben statische SSR wat betekent dat de server statische HTML creërt waarbij geen gebruiker interactie mogelijk is en ook niet het bijhouden van razor component state.
+Als laatste hebben we ook interactieve SSR dit wil zeggen dat blazor events gebruiker interactiviteit toestaan en dat de razor component state wordt bijgehouden door het blazor framework. \autocite{Guardrex2023}
+We gaan de client en server concepten afsluiten met een laatste definitie van prerendering. Het proces van prerendering houdt in dat initieel de pagina inhoud wordt gerenderd op de server zonder event handlers voor gerenderde controllers.
+De server geeft zo snel mogelijk de HTML-gebruikersinterface terug als antwoord op het initiële verzoek. Dit zorgt ervoor dat de applicatie veel responsiever aanvoelt voor gebruikers.
+Prerendering kan ook zoekmachineoptimalisatie verbeteren door de inhoud te renderen voor het initiële HTTP antwoord die zoekmachines gebruiken voor het berekenen van de website rang. \autocite{Guardrex2023}
+Nu gaan we dieper in op de concepten rond statisch en interactief renderen. Een razor component kan statisch of interactief gerenderd worden \autocite{Guardrex2023}.
+Statische rendering is een server-side scenario dit houdt in dat het component gerenderd wordt zonder de mogelijkheid voor interactie tussen de gebruiker en de .NET/C\# code.
+Dit wil niet zeggen dat de gebruiker geen interactie meer kan hebben met de JavaScript of HTML DOM events. Het is gewoon niet mogelijk om gebruiker events die op de client gebeuren
+te verwerken met .NET die op de server draait. \autocite{Guardrex2023} Daarentegen kan interactief renderen wel .NET events verwerken via C\# code. De .NET events worden verwerkt op de server door de ASP.NET Core
+runtime of in de browser op de client door de WebAssembly gebaseerde runtime. \autocite{Guardrex2023} Als laatste van de fundamentele concepten bespreken we razor componenten zoals gedefinieerd door Microsoft.
+\begin{quote}
+  Blazor apps are based on Razor components, often referred to as just components. A component is an element of UI, such as a page, dialog, or data entry form. Components are .NET C\# classes built into .NET assemblies.
+  \paragraph{}
+  Razor refers to how components are usually written in the form of a Razor markup page for client-side UI logic and composition. Razor is a syntax for combining HTML markup with C\# code designed for developer productivity. Razor files use the .razor file extension. \autocite{Guardrex2023}
+\end{quote}
+Nu we alle fundamentele concepten besproken hebben gaan we kijken wat een rendermode is en welke verschillende er allemaal bestaan. Elk component in een blazor web app neemt een rendermode aan om het hosting model
+dat het gebruikt te bepalen. Ook dient dit om te beslissen waar het zal gerenderd worden en of het wel of niet interactief is. \autocite{Guardrex2023a} Een rendermode op een component kan toegekend worden door de
+@rendermode directive te gebruiken bij de instantie van een component of bij de definitie ervan. \autocite{Guardrex2023a} Er zijn vier verschillende rendermodes die je kan toewijzen aan een component. Om te beginnen zullen we starten met de
+Static Server rendermode. Deze rendermode zorgt voor static server-side rendering dit wil dus zeggen dat de rendering gebeurd op de server en hier ook geen gebruiker interactiviteit van toepassing is omdat deze rendermode
+static is \autocite{Guardrex2023a}. Daarnaast is er ook de Interactive Server rendermode dit is hetzelfde als de vorige rendermode maar met het verschil dat we hier wel gebruiker interactiviteit hebben door middel van een real-time connectie
+met de browser. Deze connectie wordt gemaakt wanneer de server component gerenderd wordt. \autocite{Guardrex2023a} Dan hebben we ook nog de Interactive WebAssembly rendermode deze zorgt voor client-side rendering wat ook inhoud dat deze
+interactief is. De .NET runtime en app bundle worden gedownload en gecached wanner het webassembly component initieel gerenderd wordt. Belangrijk om te weten hierbij is dat componenten die client-side rendering gebruiken
+in een apart client project moeten gebouwd worden dat de webassembly host instelt. \autocite{Guardrex2023a} Ten slotte hebben we de Interactive Auto rendermode deze combineert zowel Interactive SSR als CSR. Wanneer een component met deze rendermode
+initieel wordt geladen gaat dit gebruik maken van interactive SSR. In de achtergrond wordt de .NET runtime en app bundle gedownload naar de client en gecached zodanig dat wanneer de component opnieuw bezocht wordt deze
+CSR gebruikt. \autocite{Guardrex2023a} Prerendering staat standaard aan op elk interactief component \autocite{Guardrex2023a}. 
 % Refereren naar de literatuur kan met:
 % \autocite{BIBTEXKEY} -> (Auteur, jaartal)
 % \textcite{BIBTEXKEY} -> Auteur (jaartal)
-Voorbeeld van een referentie waar de auteursnaam geen onderdeel van de zin is~\autocite{Moore2002}.
 
-\lipsum[4-9]
+% \lipsum[4-9]
 
 \section{Methodologie}%
 \label{sec:methodologie}
 
 % TODO: (fase 5) beschrijf in detail in welke fasen je onderzoek uiteenvalt, hoe lang elke fase duurt en wat het concrete resultaat van elke fase is. Welke onderzoekstechniek ga je toepassen om elk van je onderzoeksvragen te beantwoorden? Gebruik je hiervoor experimenten, vragenlijsten, simulaties? Je beschrijft ook al welke tools je denkt hiervoor te gebruiken of te ontwikkelen.
 
-\lipsum[10-12]
+% \lipsum[10-12]
 
 \section{Verwachte resultaten}%
 \label{sec:verwachte-resultaten}
 
 % TODO: (fase 6) beschrijf wat je verwacht uit je onderzoek en waarom (bv. volgens je literatuuronderzoek is softwarepakket A het meest gebruikte en denk je dat het voor deze casus ook het meest geschikt zal zijn). Natuurlijk kan je niet in de toekomst kijken en mag je geen alternatieve mogelijkheden uitsluiten. In de praktijk gebeurt het ook vaak dat een onderzoek tot verrassende resultaten leidt, dat maakt het proces nog interessanter!
 
-\lipsum[14-18]
+% \lipsum[14-18]
 
 \section{Discussie, conclusie}%
 \label{sec:discussie-conclusie}
+% Herschrijven
+We kunnen concluderen dat .NET 8 hun nieuw web app template veel problemen kan oplossen in
+verband met rendering. Omdat dit nu op component niveau wordt toegekend, kan je specifiek
+gaan kijken welk component welke render mode nodig heeft en zo voldoen aan
+de criteria waaraan dat component moet voldoen.
 
-\lipsum[19-21]
+% \lipsum[19-21]
 
 %------------------------------------------------------------------------------
 % Referentielijst
