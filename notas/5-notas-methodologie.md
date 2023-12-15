@@ -23,4 +23,24 @@ Gebruik (een) Mermaid-diagram(men) om de stappen of het tijdverloop de visualise
     om het beste van beide hostingmodellen te benutten.
 2.  Experiment uitvoeren waarbij in beide hostingmodellen op een zelfgemaakt applicatie testen worden uitgevoerd in verband met laadtijd, netwerkprestaties, crawling van de pagina voor seo.
 3.  Resultaten interpreteren die voortkomen uit het experiment, kijken welk hostingmodel de snelste laadtijd en netwerkprestaties heeft. Ook welke hostingmodel het best geschikt is voor seo. Ook belangrijk is dat we bekijken hoe de nieuwste functies in .NET 8 ons kunnen helpen om beide hostingmodellen zo optimaal mogelijk te gebruiken.
+
+```mermaid
+flowchart TD
+    A[Literatuuronderzoek] --> B[Applicatie bouwen]
+    B --> C[Experiment uitvoeren]
+    C --> D[Gegevensanalyse]
+    D --> E[Interpretatie en conclusie]
+```
+
+```mermaid
+gantt
+    title tijdsverloop
+    dateFormat  YYYY-MM-DD
+    Literatuuronderzoek :a1, 2024-01-01, 14d
+    Applicatie bouwen :b1, after a1, 14d
+    Experiment uitvoeren :c1, after b1, 14d
+    Gegevensanalyse :d1, after c1, 7d
+    Interpretatie en conclusie :e1, after d1, 14d
+```
+
 <!-- Aanpassen van methodologie -->
